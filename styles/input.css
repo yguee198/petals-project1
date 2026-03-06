@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.hello-img-bg {
+    background-image: url('../assets/image_assets/download\ \(32\).jpg');
+}
