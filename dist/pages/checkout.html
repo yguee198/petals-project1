@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout - Petal</title>
+    <style>
+      body {
+        background-color: #000;
+        color: #f4f4f5;
+        scroll-behavior: smooth;
+      }
+
+      .glass {
+        background: rgba(24, 24, 27, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .input-field {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        color: #f4f4f5;
+        outline: none;
+        transition: border-color 0.3s;
+        width: 100%;
+      }
+
+      .input-field:focus {
+        border-color: #22c55e;
+      }
+
+      .btn-primary {
+        background: #22c55e;
+        color: #000;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        transition: background 0.3s;
+        border: none;
+        cursor: pointer;
+      }
+
+      .btn-primary:hover {
+        background: #16a34a;
+      }
+
+      .checkout-bg {
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        min-height: 100vh;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #22c55e;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      @media (max-width: 768px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .order-summary {
+        background: rgba(24, 24, 27, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        position: sticky;
+        top: 2rem;
+      }
+
+      .cart-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .cart-item:last-child {
+        border-bottom: none;
+      }
+
+      .total-section {
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding-top: 1rem;
+        margin-top: 1rem;
+      }
+
+      .payment-methods {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+      }
+
+      .payment-method {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+      }
+
+      .payment-method:hover {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.1);
+      }
+
+      .payment-method.selected {
+        border-color: #22c55e;
+        background: rgba(34, 197, 94, 0.2);
+      }
+
+      .payment-method-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+      }
+
+      .payment-form {
+        display: none;
+      }
+
+      .payment-form.active {
+        display: block;
+      }
+
+      .sidebar-link.active {
+        background: rgba(34, 197, 94, 0.1);
+        color: #4ade80;
+        border-right: 3px solid #22c55e;
+      }
+    </style>
+    <link rel="stylesheet" crossorigin href="/assets/output-BxnA7J3S.css">
+  </head>
+  <body class="min-h-screen lg:flex checkout-bg">
+    <div class="lg:hidden flex items-center justify-between p-4 bg-black border-b border-white/10 sticky top-0 z-[100]">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sprout" class="text-green-500"></i>
+        <span class="text-xl font-black tracking-tighter uppercase italic">Petal</span>
+      </div>
+      <button onclick="toggleSidebar()" class="p-2 bg-white/5 rounded-lg border border-white/10">
+        <i data-lucide="menu" class="w-6 h-6 text-green-500"></i>
+      </button>
+    </div>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] hidden"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 glass border-r border-white/5 z-[150] -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col">
+      <div class="p-8">
+        <a href="../index.html" class="flex items-center gap-2">
+          <i data-lucide="sprout" class="text-green-500 w-8 h-8"></i>
+          <span class="text-2xl font-black tracking-tighter uppercase italic">Petal</span>
+        </a>
+      </div>
+
+      <nav class="flex-1 px-4 space-y-2">
+        <p class="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-4">Personal Dashboard</p>
+        <a href="user.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-zinc-400 hover:bg-white/5 transition group">
+          <i data-lucide="user" class="w-5 h-5"></i> Profile Overview
+        </a>
+        <a href="orders.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-zinc-400 hover:bg-white/5 transition">
+          <i data-lucide="package" class="w-5 h-5"></i> My Orders
+        </a>
+        <a href="checkout.html" class="sidebar-link active flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i> Cart & Checkout
+          <span id="sidebar-cart-count" class="bg-green-500 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center ml-auto hidden">0</span>
+        </a>
+        <a href="../index.html" class="sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-zinc-400 hover:bg-white/5 transition">
+          <i data-lucide="store" class="w-5 h-5"></i> Continue Shopping
+        </a>
+      </nav>
+
+      <div class="p-6 border-t border-white/5">
+        <button onclick="logout()" class="flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold text-sm text-red-400 hover:bg-red-500/10 transition">
+          <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+        </button>
+      </div>
+    </aside>
+
+    <div class="flex-1 lg:ml-72 w-full">
+      <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 flex flex-col gap-8">
+            <div class="glass p-6 rounded-3xl">
+              <h2 class="section-title">Contact Information</h2>
+              <div class="form-grid">
+                <div>
+                  <label class="block text-sm font-medium mb-2">First Name</label>
+                  <input type="text" id="first-name" class="input-field" required />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Last Name</label>
+                  <input type="text" id="last-name" class="input-field" required />
+                </div>
+              </div>
+              <div class="mt-4">
+                <label class="block text-sm font-medium mb-2">Email Address</label>
+                <input type="email" id="email" class="input-field" required />
+              </div>
+              <div class="mt-4">
+                <label class="block text-sm font-medium mb-2">Phone Number</label>
+                <input type="tel" id="phone" class="input-field" required />
+              </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl">
+              <h2 class="section-title">Shipping Address</h2>
+              <div>
+                <label class="block text-sm font-medium mb-2">Street Address</label>
+                <input type="text" id="address" class="input-field" placeholder="123 Main Street" required />
+              </div>
+              <div class="mt-4">
+                <label class="block text-sm font-medium mb-2">Apartment, suite, etc. (optional)</label>
+                <input type="text" id="address2" class="input-field" placeholder="Apartment, suite, unit, building, floor, etc." />
+              </div>
+              <div class="form-grid mt-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">City</label>
+                  <input type="text" id="city" class="input-field" required />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">State/Province</label>
+                  <input type="text" id="state" class="input-field" required />
+                </div>
+              </div>
+              <div class="form-grid mt-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">ZIP Code</label>
+                  <input type="text" id="zip" class="input-field" required />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Country</label>
+                  <select id="country" class="input-field" required>
+                    <option value="ID">Indonesia</option>
+                    <option value="US">United States</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass p-6 rounded-3xl">
+              <h2 class="section-title">Payment Method</h2>
+              <div class="w-full flex gap-5 pb-5">
+                <div class="payment-method selected flex-auto" data-method="card" onclick="selectPaymentMethod('card')">
+                  <span class="payment-method-icon"><i data-lucide="credit-card" class="mx-auto"></i></span>
+                  <div class="font-semibold">Card</div>
+                  <div class="text-xs text-zinc-400">Visa, Mastercard</div>
+                </div>
+
+                <div class="payment-method flex-auto" data-method="paypal" onclick="selectPaymentMethod('paypal')">
+                  <span class="payment-method-icon"><i data-lucide="wallet" class="mx-auto"></i></span>
+                  <div class="font-semibold">PayPal</div>
+                  <div class="text-xs text-zinc-400">Secure Transfer</div>
+                </div>
+              </div>
+
+              <div id="cardForm" class="payment-form active space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Name on Card</label>
+                  <input type="text" id="card-name" class="input-field" required />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Card Number</label>
+                  <input type="text" id="card-number" class="input-field" placeholder="1234 5678 9012 3456" required />
+                </div>
+                <div class="form-grid">
+                  <div>
+                    <label class="block text-sm font-medium mb-2">Expiry Date</label>
+                    <input type="text" id="expiry" class="input-field" placeholder="MM/YY" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium mb-2">CVV</label>
+                    <input type="text" id="cvv" class="input-field" placeholder="123" required />
+                  </div>
+                </div>
+              </div>
+
+              <div id="paypalForm" class="payment-form">
+                <div class="text-center py-8 bg-white/5 rounded-2xl">
+                  <div class="text-4xl mb-2 font-black italic text-blue-500">PayPal</div>
+                  <p class="text-zinc-400 mb-4">Click below to continue to PayPal's secure portal.</p>
+                  <button type="button" class="btn-primary" onclick="processPayPal()">Continue with PayPal</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-1">
+            <div class="order-summary">
+              <h2 class="text-xl font-bold mb-6">Order Summary</h2>
+              <div id="order-items" class="space-y-4 mb-6"></div>
+              <div class="total-section">
+                <div class="flex justify-between text-lg font-semibold mb-2">
+                  <span>Subtotal</span>
+                  <span id="subtotal">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-sm mb-2">
+                  <span>Shipping</span>
+                  <span id="shipping">Rp 25,000</span>
+                </div>
+                <div class="flex justify-between text-sm mb-4">
+                  <span>Tax (10%)</span>
+                  <span id="tax">Rp 0</span>
+                </div>
+                <div class="flex justify-between text-2xl font-bold text-green-500">
+                  <span>Total</span>
+                  <span id="order-total">Rp 0</span>
+                </div>
+              </div>
+              <button type="button" id="complete-order" class="btn-primary w-full text-lg py-4 mt-6 flex items-center justify-center gap-2">
+                <i data-lucide="lock" class="w-5 h-5"></i>
+                Complete Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      const users = JSON.parse(localStorage.getItem("petalUsers")) || [];
+      let cart = [];
+      let selectedPaymentMethod = "card";
+
+      if (!currentUser) {
+        alert("Please login to checkout");
+        window.location.href = "user-auth.html";
+      } else {
+        cart = currentUser.cart || [];
+      }
+
+      function updateCartCount() {
+        const count = cart.reduce((s, i) => s + i.quantity, 0);
+        const sidebarCount = document.getElementById("sidebar-cart-count");
+        if (sidebarCount) {
+          sidebarCount.textContent = count;
+          sidebarCount.classList.toggle("hidden", count === 0);
+        }
+      }
+
+      function renderOrderSummary() {
+        const container = document.getElementById("order-items");
+        const subtotalEl = document.getElementById("subtotal");
+        const taxEl = document.getElementById("tax");
+        const totalEl = document.getElementById("order-total");
+
+        if (cart.length === 0) {
+          container.innerHTML = "<p class='text-zinc-500 text-center'>Your cart is empty.</p>";
+          subtotalEl.textContent = "Rp 0";
+          taxEl.textContent = "Rp 0";
+          totalEl.textContent = "Rp 0";
+          return;
+        }
+        // a;dazl;dmlaz;lmd;zaml;dml;zalm
+        console.log(Object.keys(cart[0]))
+
+        container.innerHTML = cart
+          .map(
+            (i) => `
+          <div class="cart-item">
+            <img src=".${i.image}" onerror="this.src='/assets/image_assets/download (31).jpg'" class="w-16 h-16 object-cover rounded-lg">
+            <div class="flex-1">
+              <p class="font-medium text-sm">${i.name}</p>
+              <p class="text-xs text-zinc-400">Qty: ${i.quantity}</p>
+            </div>
+            <p class="text-green-500 font-semibold text-sm">Rp ${(i.price * i.quantity).toLocaleString()}</p>
+          </div>`
+          )
+          .join("");
+
+        const subtotal = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+        const shipping = 25000;
+        const tax = Math.round((subtotal + shipping) * 0.1);
+        const total = subtotal + shipping + tax;
+
+        subtotalEl.textContent = `Rp ${subtotal.toLocaleString()}`;
+        taxEl.textContent = `Rp ${tax.toLocaleString()}`;
+        totalEl.textContent = `Rp ${total.toLocaleString()}`;
+      }
+
+      function selectPaymentMethod(method) {
+        selectedPaymentMethod = method;
+        document.querySelectorAll(".payment-method").forEach((el) => el.classList.remove("selected"));
+        document.querySelector(`[data-method="${method}"]`).classList.add("selected");
+        document.querySelectorAll(".payment-form").forEach((f) => f.classList.remove("active"));
+        document.getElementById(`${method}Form`).classList.add("active");
+      }
+
+      function processPayPal() {
+        alert("Redirecting to PayPal...");
+      }
+
+      document.getElementById("complete-order").addEventListener("click", function () {
+        if (cart.length === 0) {
+          alert("Your cart is empty.");
+          return;
+        }
+
+        const requiredFields = ["first-name", "last-name", "email", "phone", "address", "city", "state", "zip"];
+        let valid = true;
+
+        requiredFields.forEach((id) => {
+          const field = document.getElementById(id);
+          if (!field.value.trim()) {
+            field.style.borderColor = "#dc2626";
+            valid = false;
+          } else {
+            field.style.borderColor = "rgba(255,255,255,0.1)";
+          }
+        });
+
+        if (selectedPaymentMethod === "card") {
+          ["card-name", "card-number", "expiry", "cvv"].forEach((id) => {
+            const field = document.getElementById(id);
+            if (!field.value.trim()) {
+              field.style.borderColor = "#dc2626";
+              valid = false;
+            }
+          });
+        }
+
+        if (!valid) {
+          alert("Please fill in all required fields.");
+          return;
+        }
+
+        const order = {
+          id: Date.now(),
+          date: new Date().toISOString(),
+          items: [...cart],
+          total: document.getElementById("order-total").textContent,
+          paymentMethod: selectedPaymentMethod,
+          status: "Processing",
+        };
+
+        currentUser.orders = currentUser.orders || [];
+        currentUser.orders.push(order);
+        currentUser.cart = [];
+
+        const index = users.findIndex((u) => u.id === currentUser.id);
+        if (index !== -1) users[index] = currentUser;
+
+        localStorage.setItem("petalUsers", JSON.stringify(users));
+        localStorage.setItem("currentUser", JSON.stringify(currentUser));
+
+        alert("Order placed successfully!");
+        window.location.href = "orders.html";
+      });
+
+      // Fixed: Checked if elements exist before adding event listeners
+      const userBtn = document.getElementById("user-btn");
+      if (userBtn) userBtn.onclick = () => (window.location.href = "user.html");
+
+      const cartBtn = document.getElementById("cart-btn");
+      if (cartBtn) cartBtn.onclick = () => (window.location.href = "../index.html");
+
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("-translate-x-full");
+        document.getElementById("sidebarOverlay").classList.toggle("hidden");
+      }
+
+      function logout() {
+        localStorage.removeItem("currentUser");
+        window.location.href = "user-auth.html";
+      }
+
+      updateCartCount();
+      renderOrderSummary();
+    </script>
+  </body>
+</html>

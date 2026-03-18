@@ -8,6 +8,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "vite build",
+    "preview": "vite preview",
     "dev": "vite",
     "server": "npx @tailwindcss/cli -i ./styles/input.css -o ./styles/output.css --watch"
   },

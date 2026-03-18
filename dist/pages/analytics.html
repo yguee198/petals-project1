@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petal Admin | Analytics</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #050505;
+        color: #f4f4f5;
+        overflow-x: hidden;
+      }
+
+      .glass {
+        background: rgba(24, 24, 27, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .stat-card {
+        background: #09090b;
+        border: 1px solid #18181b;
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        border-color: rgba(34, 197, 94, 0.3);
+      }
+
+      .sidebar-item.active {
+        background: #22c55e;
+        color: #000;
+      }
+
+      /* Custom Scrollbar */
+
+      ::-webkit-scrollbar { width: 6px; }
+
+      ::-webkit-scrollbar-track { background: #050505; }
+
+      ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+    </style>
+    <link rel="stylesheet" crossorigin href="/assets/output-BxnA7J3S.css">
+  </head>
+  <body class="flex min-h-screen">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 glass border-r border-white/5 z-[150] transition-transform duration-300 flex flex-col">
+      <div class="p-8">
+        <h1 class="text-2xl font-black tracking-tighter italic">
+          Petal <span class="text-green-500">Admin.</span>
+        </h1>
+      </div>
+
+      <nav class="flex-1 px-4 space-y-2">
+        <a href="manager.html" onclick="showSection('orders')" id="link-orders" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-zinc-400 hover:bg-white/5 transition">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i> Orders
+        </a>
+        <a href="./customers.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-zinc-400 hover:bg-white/5 transition">
+          <i data-lucide="users" class="w-5 h-5"></i> Customers
+        </a>
+        <a href="#" onclick="showSection('analytics')" id="link-analytics" class="sidebar-item active flex items-center gap-3 px-4 py-3 text-white rounded-xl font-bold text-sm transition">
+          <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Analytics
+        </a>
+      </nav>
+
+      <div class="p-6 border-t border-white/5">
+        <div class="flex items-center gap-3 px-2">
+          <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold" id="admin-initial">A</div>
+          <div>
+            <p class="text-sm font-bold" id="admin-name-display">Admin</p>
+            <button onclick="logout()" class="text-[10px] text-red-500 font-black uppercase hover:underline">Logout</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="flex-1 ml-64 p-10">
+      <header class="flex justify-between items-center mb-10">
+        <h2 id="section-title" class="text-2xl font-extrabold tracking-tight">Dashboard Overview</h2>
+        <div class="bg-white/5 px-4 py-2 rounded-full border border-white/10 text-xs font-medium">
+          Status: <span class="text-green-500">System Live</span>
+        </div>
+      </header>
+
+      <div id="section-analytics" class="space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="stat-card lg:col-span-2 p-8 rounded-[2rem]">
+            <h3 class="text-xs font-black text-zinc-500 mb-6 uppercase tracking-[0.2em]">Weekly Revenue</h3>
+            <div class="relative h-[300px]">
+              <canvas id="mainSalesChart"></canvas>
+            </div>
+          </div>
+
+          <div class="stat-card p-8 rounded-[2rem]">
+            <h3 class="text-xs font-black text-zinc-500 mb-6 uppercase tracking-[0.2em]">Most Crated Plants</h3>
+            <div class="relative h-[300px]">
+              <canvas id="categoryDoughnut"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card rounded-[2rem] overflow-hidden">
+          <div class="p-8 border-b border-white/5 font-bold uppercase text-xs tracking-widest text-zinc-400">Registered Customers</div>
+          <table class="w-full text-left text-sm">
+            <tbody id="user-list-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="section-orders" class="hidden">
+        <div class="stat-card rounded-[2rem] overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-white/5 text-[10px] uppercase tracking-widest font-black text-zinc-500">
+              <tr>
+                <th class="p-6">Product</th>
+                <th class="p-6">Category</th>
+                <th class="p-6 text-center">In Carts</th>
+                <th class="p-6">Unit Price</th>
+                <th class="p-6 text-right">Potential Revenue</th>
+              </tr>
+            </thead>
+            <tbody id="orders-list-table" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // 1. DATA HANDLING
+      // Using simple localStorage mocks since petalApp wasn't provided in full
+      const getUsers = () => JSON.parse(localStorage.getItem("petalUsers")) || [];
+      const getCurrentUser = () => JSON.parse(localStorage.getItem("currentUser"));
+
+      const userDB = getUsers();
+      const current = getCurrentUser();
+
+      // Auth Guard
+      if (!current || current.role !== "admin") {
+        // Uncomment to enable security:
+        // window.location.href = "user-auth.html";
+      }
+
+      // UI Init
+      document.getElementById("admin-name-display").innerText = current?.name || "Jonathan";
+      document.getElementById("admin-initial").innerText = (current?.name || "A").charAt(0).toUpperCase();
+
+      // 2. NAVIGATION
+      function showSection(sectionId) {
+        document.getElementById("section-analytics").classList.add("hidden");
+        document.getElementById("section-orders").classList.add("hidden");
+        
+        document.querySelectorAll(".sidebar-item").forEach(l => {
+          l.classList.remove("active", "text-white");
+          l.classList.add("text-zinc-400");
+        });
+
+        document.getElementById(`section-${sectionId}`).classList.remove("hidden");
+        const activeLink = document.getElementById(`link-${sectionId}`);
+        activeLink.classList.add("active", "text-white");
+        activeLink.classList.remove("text-zinc-400");
+
+        document.getElementById("section-title").innerText = 
+          sectionId === "analytics" ? "Dashboard Overview" : "Live Cart Inventory";
+      }
+
+      // 3. CHARTING LOGIC
+      function initCharts() {
+        Chart.defaults.color = "#52525b";
+
+        // Line Chart (Mock Sales)
+        new Chart(document.getElementById("mainSalesChart"), {
+          type: "line",
+          data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [{
+              data: [120000, 450000, 300000, 900000, 600000, 1100000, 1400000],
+              borderColor: "#22c55e",
+              backgroundColor: "rgba(34, 197, 94, 0.05)",
+              fill: true,
+              tension: 0.4,
+              borderWidth: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { grid: { color: "rgba(255,255,255,0.05)" } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        // DOUGHNUT CHART: AGGREGATED CART ITEMS
+        const cartData = {};
+        userDB.forEach(user => {
+          if (user.cart) {
+            user.cart.forEach(item => {
+              const name = item.name || item.title || "Plant Item";
+              cartData[name] = (cartData[name] || 0) + (item.quantity || 1);
+            });
+          }
+        });
+
+        const labels = Object.keys(cartData);
+        const values = Object.values(cartData);
+
+        new Chart(document.getElementById("categoryDoughnut"), {
+          type: "doughnut",
+          data: {
+            labels: labels.length ? labels : ["Empty"],
+            datasets: [{
+              data: values.length ? values : [1],
+              backgroundColor: ["#22c55e", "#3b82f6", "#f59e0b", "#ec4899", "#8b5cf6"],
+              borderWidth: 0,
+              hoverOffset: 20
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "78%",
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { size: 11 } } }
+            }
+          }
+        });
+      }
+
+      // 4. RENDERING TABLES
+      function renderData() {
+        // Render Users
+        const userTable = document.getElementById("user-list-table");
+        userTable.innerHTML = userDB.map(u => `
+          <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+            <td class="p-6 font-bold uppercase text-xs tracking-tighter">${u.name || 'Unknown'}</td>
+            <td class="p-6 text-zinc-500 text-xs">${u.email}</td>
+            <td class="p-6 text-right"><span class="text-green-500 font-bold uppercase text-[10px] bg-green-500/10 px-2 py-1 rounded">${u.role || 'user'}</span></td>
+          </tr>
+        `).join("");
+
+        // Render Aggregated Orders (Cart Items)
+        const orderTable = document.getElementById("orders-list-table");
+        const aggregated = {};
+        
+        userDB.forEach(user => {
+          if(user.cart) user.cart.forEach(item => {
+            if(!aggregated[item.name]) {
+              aggregated[item.name] = { ...item, totalQty: 0 };
+            }
+            aggregated[item.name].totalQty += item.quantity;
+          });
+        });
+
+        const items = Object.values(aggregated);
+        if (items.length === 0) {
+          orderTable.innerHTML = `<tr><td colspan="5" class="p-20 text-center text-zinc-600 italic">No items currently in user carts</td></tr>`;
+        } else {
+          orderTable.innerHTML = items.map(item => `
+            <tr class="hover:bg-white/[0.02] transition">
+              <td class="p-6 flex items-center gap-4">
+                <img src="${item.image || item.img}" class="w-10 h-10 rounded-lg object-cover">
+                <div class="font-bold text-white">${item.name || item.title}</div>
+              </td>
+              <td class="p-6 text-xs text-zinc-500 uppercase">${item.category || 'Plant'}</td>
+              <td class="p-6 text-center font-mono font-bold text-green-500">${item.totalQty}</td>
+              <td class="p-6 text-zinc-400 italic">Rp ${item.price?.toLocaleString()}</td>
+              <td class="p-6 text-right font-bold text-white">Rp ${(item.price * item.totalQty).toLocaleString()}</td>
+            </tr>
+          `).join("");
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("currentUser");
+        window.location.href = "user-auth.html";
+      }
+
+      // Initial Load
+      window.onload = () => {
+        lucide.createIcons();
+        initCharts();
+        renderData();
+      };
+    </script>
+  </body>
+</html>
