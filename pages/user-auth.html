@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petal | Access Sanctuary</title>
+    <link rel="stylesheet" href="../styles/output.css" />
+    <style>
+      body {
+        background-color: #000;
+        color: #fff;
+      }
+      .glass {
+        background: rgba(24, 24, 27, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      input:focus {
+        border-color: #22c55e !important;
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
+      <div class="text-center mb-10">
+        <h1
+          id="auth-title"
+          class="text-5xl font-black italic uppercase tracking-tighter mb-2"
+        >
+          Welcome
+        </h1>
+        <p id="auth-subtitle" class="text-zinc-500 text-sm">
+          Sign in to your premium plant collection
+        </p>
+      </div>
+
+      <form id="auth-form" class="space-y-5">
+        <div id="name-field" class="hidden">
+          <label
+            class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold ml-2"
+            >Full Name</label
+          >
+          <input
+            type="text"
+            id="reg-name"
+            class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mt-1 outline-none transition-all"
+            placeholder="Jonathan Doe"
+          />
+        </div>
+
+        <div>
+          <label
+            class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold ml-2"
+            >Email Address</label
+          >
+          <input
+            type="email"
+            id="auth-email"
+            required
+            class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mt-1 outline-none transition-all"
+            placeholder="name@example.com"
+          />
+        </div>
+
+        <div>
+          <label
+            class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold ml-2"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="auth-pass"
+            required
+            class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 mt-1 outline-none transition-all"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button
+          type="submit"
+          id="submit-btn"
+          class="w-full bg-green-500 text-black font-black py-4 rounded-2xl hover:bg-green-400 transition transform hover:scale-[1.01] active:scale-95 mt-4"
+        >
+          SIGN IN
+        </button>
+      </form>
+
+      <div class="mt-8 text-center">
+        <button
+          onclick="toggleAuth()"
+          id="toggle-link"
+          class="text-zinc-400 text-sm hover:text-green-500 transition"
+        >
+          New here?
+          <span class="font-bold underline text-white">Create an account</span>
+        </button>
+      </div>
+    </div>
+
+    <script src="../scripts/app.js"></script>
+    <script>
+      let isLogin = true;
+      let users = petalApp.getUsers();
+
+      if (!users || users.length === 0) {
+        users = [
+          {
+            email: "admin@petal.com",
+            pass: "admin123",
+            role: "admin",
+            name: "Admin Jonathan",
+          },
+        ];
+        petalApp.saveUsers(users);
+      }
+
+      function toggleAuth() {
+        isLogin = !isLogin;
+        const title = document.getElementById("auth-title");
+        const subtitle = document.getElementById("auth-subtitle");
+        const nameField = document.getElementById("name-field");
+        const submitBtn = document.getElementById("submit-btn");
+        const toggleLink = document.getElementById("toggle-link");
+
+        title.innerText = isLogin ? "Welcome" : "Join Us";
+        subtitle.innerText = isLogin
+          ? "Sign in to your premium collection"
+          : "Start your botanical journey today";
+        nameField.classList.toggle("hidden", isLogin);
+        submitBtn.innerText = isLogin ? "SIGN IN" : "CREATE ACCOUNT";
+        toggleLink.innerHTML = isLogin
+          ? 'New here? <span class="font-bold underline text-white">Create an account</span>'
+          : 'Have an account? <span class="font-bold underline text-white">Sign In</span>';
+      }
+
+      document.getElementById("auth-form").onsubmit = (e) => {
+        e.preventDefault();
+        const email = document.getElementById("auth-email").value;
+        const pass = document.getElementById("auth-pass").value;
+
+        if (isLogin) {
+          const user = users.find((u) => u.email === email && u.pass === pass);
+          if (user) {
+            petalApp.setCurrentUser(user);
+            window.location.href =
+              user.role === "admin" ? "analytics.html" : "user.html";
+          } else {
+            alert("Invalid credentials");
+          }
+        } else {
+          const name = document.getElementById("reg-name").value;
+          if (users.find((u) => u.email === email))
+            return alert("User already exists");
+
+          users.push({ id: Date.now(), email, pass, name, role: "user" });
+          petalApp.saveUsers(users);
+          alert("Account created! Please login.");
+          toggleAuth();
+        }
+      };
+    </script>
+  </body>
+</html>

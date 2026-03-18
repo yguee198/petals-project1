@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petal - Premium Plant Store</title>
+    <link rel="stylesheet" href="./styles/output.css" />
+    <style>
+      /* --- Pinterest Masonry Layout --- */
+      .masonry-grid {
+        column-count: 2;
+        column-gap: 1rem;
+      }
+      @media (min-width: 768px) {
+        .masonry-grid {
+          column-count: 3;
+          column-gap: 1.5rem;
+        }
+      }
+      @media (min-width: 1280px) {
+        .masonry-grid {
+          column-count: 4;
+        }
+      }
+
+      .masonry-item {
+        break-inside: avoid;
+        margin-bottom: 1.5rem;
+      }
+
+      body {
+        background-color: #000;
+        scroll-behavior: smooth;
+        color: #f4f4f5;
+      }
+
+      .glass {
+        background: rgba(24, 24, 27, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .product-card {
+        background: #09090b;
+        border: 1px solid #18181b;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      #cart-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+      }
+      #cart-modal.active {
+        display: flex;
+        justify-content: flex-end;
+      }
+      #cart-panel {
+        width: 100%;
+        max-width: 450px;
+        background: #09090b;
+        transform: translateX(100%);
+        transition: transform 0.4s ease;
+      }
+      #cart-modal.active #cart-panel {
+        transform: translateX(0);
+      }
+
+      /* Improved Zoom Modal Styling */
+      #zoom-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: none;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(15px);
+        padding: 1.5rem;
+        overflow-y: auto; /* Allows scrolling on small phones */
+      }
+
+      #zoom-modal.active {
+        display: flex;
+      }
+
+      .modal-content-glass {
+        background: rgba(24, 24, 27, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 2rem;
+        width: 100%;
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      /* Fix for the price formatting in JS later */
+      .price-tag {
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <nav
+      class="sticky top-0 z-[100] border-b border-white/5 bg-black/80 backdrop-blur-xl px-6 py-4"
+    >
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-2 cursor-pointer">
+          <i data-lucide="sprout" class="text-green-500"></i>
+          <span class="text-2xl font-black tracking-tighter uppercase"
+            >Petal</span
+          >
+        </div>
+        <div class="flex items-center gap-x-8">
+          <button
+            id="cart-btn"
+            class="relative p-3 hover:bg-white/5 rounded-full transition"
+          >
+            <i data-lucide="shopping-basket" class="w-6 h-6"></i>
+            <span
+              id="cart-count"
+              class="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-black rounded-full w-5 h-5 flex items-center justify-center hidden"
+              >0</span
+            >
+          </button>
+          <div id="auth-button"></div>
+        </div>
+      </div>
+    </nav>
+
+    <header class="max-w-7xl mx-auto px-6 pt-12 pb-8">
+      <h2 class="text-5xl font-bold mb-8 italic">
+        Choose your <span class="text-green-500 underline">vibe.</span>
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 glass p-4 rounded-3xl">
+        <div class="md:col-span-2 relative">
+          <i
+            data-lucide="search"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5"
+          ></i>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search plants..."
+            class="w-full bg-white/5 rounded-2xl py-3 pl-12 pr-4 outline-none focus:ring-2 focus:ring-green-500 transition"
+          />
+        </div>
+        <select
+          id="category-filter"
+          class="bg-zinc-900 rounded-2xl px-4 py-3 outline-none border-none"
+        >
+          <option value="all">All Categories</option>
+          <option value="indoor">Indoor</option>
+          <option value="succulents">Succulents</option>
+          <option value="flowering">Flowering</option>
+        </select>
+        <select
+          id="price-filter"
+          class="bg-zinc-900 rounded-2xl px-4 py-3 outline-none border-none"
+        >
+          <option value="all">Any Price</option>
+          <option value="low">Under Rp 200k</option>
+          <option value="mid">Rp 200k - 500k</option>
+          <option value="high">Over Rp 500k</option>
+        </select>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 pb-20">
+      <div id="products-grid" class="masonry-grid"></div>
+      <div id="no-results" class="hidden text-center py-20 text-zinc-500">
+        No plants match your search.
+      </div>
+    </main>
+
+    <div id="cart-modal">
+      <div id="cart-panel" class="flex flex-col border-l border-white/10">
+        <div
+          class="p-8 flex justify-between items-center border-b border-white/5"
+        >
+          <h3 class="text-2xl font-bold">Your Bag</h3>
+          <button id="close-cart" class="p-2 hover:bg-white/5 rounded-full">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div
+          id="cart-items-container"
+          class="flex-1 overflow-y-auto p-8 space-y-6"
+        ></div>
+        <div id="cart-summary" class="p-8 border-t border-white/5 hidden">
+          <div class="flex justify-between text-2xl font-bold mb-6">
+            <span>Total</span
+            ><span id="cart-total" class="text-green-500">Rp 0</span>
+          </div>
+          <button
+            onclick="alert('Checkout Securely Encrypted!')"
+            class="w-full bg-green-500 text-black py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-green-400 transition"
+          >
+            <i data-lucide="lock" class="w-5 h-5"></i> SECURE CHECKOUT
+          </button>
+        </div>
+        <div
+          id="empty-cart-view"
+          class="flex-1 flex flex-col items-center justify-center text-zinc-600"
+        >
+          <i data-lucide="shopping-bag" class="w-12 h-12 mb-2"></i>
+          <p>Bag is empty</p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="zoom-modal"
+      onclick="if(event.target === this) this.classList.remove('active')"
+    >
+      <div
+        class="modal-content-glass flex flex-col md:flex-row overflow-hidden"
+      >
+        <button
+          onclick="document.getElementById('zoom-modal').classList.remove('active')"
+          class="absolute top-10 right-10 p-2 bg-white/10 rounded-full md:hidden"
+        >
+          <i data-lucide="x"></i>
+        </button>
+
+        <div
+          class="w-full md:w-1/2 bg-zinc-900/50 flex items-center justify-center p-4"
+        >
+          <img
+            id="zoomed-image"
+            src=""
+            class="max-w-full max-h-[40vh] md:max-h-[70vh] object-contain rounded-xl shadow-2xl transition-transform duration-500 scale-100"
+          />
+        </div>
+
+        <div
+          class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative"
+        >
+          <div class="mb-4">
+            <span
+              id="product-category"
+              class="text-green-500 text-xs font-black uppercase tracking-widest bg-green-500/10 px-3 py-1 rounded-full"
+            ></span>
+          </div>
+
+          <h2
+            id="product-name"
+            class="text-3xl md:text-5xl font-bold mb-2 italic"
+          ></h2>
+
+          <div class="text-2xl text-white font-light mb-6">
+            Rp <span id="product-price" class="font-bold text-green-400"></span>
+          </div>
+
+          <div class="border-t border-white/10 pt-6">
+            <p
+              id="product-description"
+              class="text-zinc-400 leading-relaxed text-sm md:text-base mb-8"
+            ></p>
+          </div>
+
+          <p
+            class="text-zinc-600 text-[10px] uppercase tracking-widest mt-auto"
+          >
+            Click outside or swipe to close
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="toast"
+      class="fixed bottom-8 right-8 z-[2000] opacity-0 transition-all duration-500"
+    >
+      <div
+        class="bg-white text-black px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 font-bold"
+      >
+        <span id="toast-message">Added!</span>
+      </div>
+    </div>
+
+    <script src="./node_modules/lucide/dist/umd/lucide.js"></script>
+    <script src="./scripts/app.js"></script>
+    <script>
+      const plants = [];
+      const plantTypes = [
+        "Monstera",
+        "Snake Plant",
+        "Fiddle Fig",
+        "Peace Lily",
+        "Jade",
+        "Aloe",
+        "Pothos",
+        "Calathea",
+      ];
+      const cats = ["indoor", "succulents", "flowering"];
+
+      // Generate 54 plants matching your image sequence
+      for (let i = 1; i <= 54; i++) {
+        plants.push({
+          id: i,
+          name: `${plantTypes[i % plantTypes.length]} #${i}`,
+          category: cats[i % cats.length],
+          price: Math.floor(Math.random() * (600000 - 80000) + 80000),
+          description:
+            "This premium plant is carefully selected \
+           to bring natural elegance and freshness into any space. \
+           Known for its balanced growth and visual appeal, it thrives \
+           in well-maintained indoor or outdoor environments. \
+            Easy to care for and visually striking, it enhances air \
+            quality while adding a calming, modern aesthetic. \
+             Ideal for homes, offices, and creative spaces, \
+              this plant is a timeless addition for both new \
+               and experienced plant enthusiasts.",
+          image:
+            i === 1
+              ? "./assets/image_assets/Best wallpaper.jpg"
+              : `./assets/image_assets/download (${30 + (i % 24)}).jpg`,
+        });
+      }
+
+      // Persist initial product set for manager/backend pages
+      if (!localStorage.getItem("petalPlants")) {
+        localStorage.setItem("petalPlants", JSON.stringify(plants));
+      }
+
+      let cart =
+        (window.petalApp && petalApp.getCart()) ||
+        JSON.parse(localStorage.getItem("plantCart")) ||
+        [];
+      let productCategory = document.getElementById("product-category");
+      let productName = document.getElementById("product-name");
+      let productPrice = document.getElementById("product-price");
+      let productDescription = document.getElementById("product-description");
+
+      function getId(id) {
+        const filteredData = plants.find((element) => {
+          return element.id == id;
+        });
+        productCategory.innerText = filteredData.category;
+        productName.innerText = filteredData.name;
+        productPrice.innerText = filteredData.price;
+        productDescription.innerText = filteredData.description;
+      }
+
+      function renderProducts() {
+        const grid = document.getElementById("products-grid");
+        const noRes = document.getElementById("no-results");
+        if (!grid || !noRes) return;
+
+        const search = document
+          .getElementById("search-input")
+          .value.toLowerCase();
+        const cat = document.getElementById("category-filter").value;
+        const price = document.getElementById("price-filter").value;
+
+        const filtered = plants.filter((p) => {
+          const mSearch = p.name.toLowerCase().includes(search);
+          const mCat = cat === "all" || p.category === cat;
+          let mPrice = true;
+          if (price === "low") mPrice = p.price < 200000;
+          if (price === "mid") mPrice = p.price >= 200000 && p.price <= 500000;
+          if (price === "high") mPrice = p.price > 500000;
+          return mSearch && mCat && mPrice;
+        });
+
+        noRes.classList.toggle("hidden", filtered.length > 0);
+        grid.innerHTML = filtered
+          .map(
+            (p) => `
+          <div class="masonry-item group">
+            <div class="product-card">
+              <div class="relative overflow-hidden cursor-zoom-in" onclick="zoomImage('${
+                p.image
+              }', '${p.id}')">
+                <img src="${
+                  p.image
+                }" class="w-full h-auto object-cover transition duration-700 group-hover:scale-110" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1466781783364-36c955e42a7f?w=400'">
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                    <i data-lucide="maximize-2" class="text-white"></i>
+                </div>
+              </div>
+              <div class="p-4">
+                <h4 class="font-bold mb-1">${p.name}</h4>
+                <div class="flex justify-between items-center">
+                  <span class="text-green-500 font-bold">Rp ${p.price.toLocaleString()}</span>
+                  <button onclick="addToCart(${
+                    p.id
+                  })" class="bg-white text-black p-2 rounded-full hover:bg-green-500 transition">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join("");
+        lucide.createIcons();
+      }
+
+      window.zoomImage = (src, id) => {
+        const modal = document.getElementById("zoom-modal");
+        const img = document.getElementById("zoomed-image");
+        img.src = src;
+        modal.classList.add("active");
+        getId(id);
+      };
+
+      window.addToCart = (id) => {
+        const p = plants.find((x) => x.id === id);
+        const item = cart.find((x) => x.id === id);
+        if (item) item.quantity++;
+        else cart.push({ ...p, quantity: 1 });
+        // persist cart (shared helper will sync to currentUser if present)
+        if (window.petalApp) petalApp.setCart(cart);
+        updateUI();
+        showToast(`Added ${p.name}`);
+      };
+
+      window.updateQty = (id, delta) => {
+        const i = cart.find((x) => x.id === id);
+        i.quantity += delta;
+        if (i.quantity <= 0) cart = cart.filter((x) => x.id !== id);
+        if (window.petalApp) petalApp.setCart(cart);
+        updateUI();
+      };
+
+      function updateUI() {
+        const count = cart.reduce((s, i) => s + i.quantity, 0);
+        const el = document.getElementById("cart-count");
+        el.textContent = count;
+        el.classList.toggle("hidden", count === 0);
+
+        const container = document.getElementById("cart-items-container");
+        const empty = document.getElementById("empty-cart-view");
+        const summary = document.getElementById("cart-summary");
+
+        if (cart.length === 0) {
+          container.innerHTML = "";
+          empty.classList.remove("hidden");
+          summary.classList.add("hidden");
+        } else {
+          empty.classList.add("hidden");
+          summary.classList.remove("hidden");
+          container.innerHTML = cart
+            .map(
+              (i) => `
+            <div class="flex gap-4 items-center border-b border-white/5 pb-4">
+              <img src="${i.image}" class="w-16 h-20 object-cover rounded-lg">
+              <div class="flex-1">
+                <p class="font-bold text-sm">${i.name}</p>
+                <p class="text-green-500 text-sm">Rp ${i.price.toLocaleString()}</p>
+                <div class="flex gap-4 mt-2">
+                    <button class="cursor-pointer" onclick="updateQty(${
+                      i.id
+                    }, -1)">-</button>
+                    <span>${i.quantity}</span>
+                    <button class="cursor-pointer" onclick="updateQty(${
+                      i.id
+                    }, 1)">+</button>
+                  </div>
+                </div>
+                <div>
+                  <button class="cursor-pointer"  onclick='removeFromCart(${
+                    i.id
+                  })'>
+                <i data-lucide='trash' class="text-red-600"></i>
+              </button>
+            </div>
+              </div>
+          `
+            )
+            .join("");
+        }
+        const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+        document.getElementById(
+          "cart-total"
+        ).textContent = `Rp ${total.toLocaleString()}`;
+        lucide.createIcons();
+      }
+
+      window.removeFromCart = (id) => {
+        cart = cart.filter((element) => {
+          return element.id !== id;
+        });
+        if (window.petalApp) petalApp.setCart(cart);
+        updateUI();
+      };
+
+      function showToast(m) {
+        const t = document.getElementById("toast");
+        document.getElementById("toast-message").textContent = m;
+        t.style.opacity = "1";
+        t.style.transform = "translateY(0)";
+        setTimeout(() => {
+          t.style.opacity = "0";
+          t.style.transform = "translateY(50)";
+        }, 2000);
+      }
+
+      document.getElementById("cart-btn").onclick = () =>
+        document.getElementById("cart-modal").classList.add("active");
+      document.getElementById("close-cart").onclick = () =>
+        document.getElementById("cart-modal").classList.remove("active");
+      document.getElementById("search-input").oninput = renderProducts;
+      document.getElementById("category-filter").onchange = renderProducts;
+      document.getElementById("price-filter").onchange = renderProducts;
+
+      renderProducts();
+      updateUI();
+
+      let authButtonsDiv = document.getElementById("auth-button");
+      const user =
+        (window.petalApp && petalApp.getCurrentUser()) ||
+        JSON.parse(localStorage.getItem("currentUser"));
+      function handleCheckUser() {
+        if (!user) {
+          authButtonsDiv.innerHTML = `
+          <a href="./pages/user-auth.html" class="text-white bg-green-600 p-3 rounded-xl font-extrabold cursor-pointer hover:bg-green-700 duration-200">
+            Login 
+          </a>
+          `;
+        } else if (user && user.role == "admin") {
+          authButtonsDiv.innerHTML = `
+          <a href="./pages/manager.html" class="text-white bg-green-600 p-3 rounded-xl font-extrabold cursor-pointer hover:bg-green-700 duration-200">
+            Access Dashboard
+          </a>
+          `;
+        } else if (user && user.role == "user") {
+          authButtonsDiv.innerHTML = `
+          <a href="./pages/user.html" class="text-white bg-green-600 p-3 rounded-xl font-extrabold cursor-pointer hover:bg-green-700 duration-200">
+            Access Dashboard
+          </a>
+          `;
+        }
+      }
+      document.addEventListener("DOMContentLoaded", handleCheckUser());
+    </script>
+  </body>
+</html>
