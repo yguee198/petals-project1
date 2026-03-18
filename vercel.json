@@ -1,4 +1,5 @@
 {
-  "buildCommand": "npx @tailwindcss/cli -i ./styles/input.css -o ./styles/output.css",
-  "outputDirectory": "."
+  "buildCommand": "npm install && npx @tailwindcss/cli -i ./styles/input.css -o ./styles/output.css",
+  "outputDirectory": ".",
+  "installCommand": "npm install"
 }
