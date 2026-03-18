@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install && npx @tailwindcss/cli -i ./styles/input.css -o ./styles/output.css",
-  "outputDirectory": ".",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "installCommand": "npm install"
 }
